@@ -1,64 +1,66 @@
 require 'test_helper'
 
-class UsersControllerTest < ActionDispatch::IntegrationTest
-  setup do
+class UsersControllerTest < ActionController::TestCase
+  def setup
     UsersController.any_instance.stubs(:authorize_request).returns(true)
+    ApplicationController.any_instance.stubs(:isAdmin).returns(true)
+    @test_data = YAML.load(File.read('test/fixtures/users.yml'))
+    @test_data_array = @test_data.values
+    @test_data_keys = @test_data_array[5].keys
   end
 
-  test "should get users" do
-    ApplicationController.any_instance.stubs(:isAdmin).returns(true)
-    get '/users'
+  def format_response(response)
+    result = response.map do |hash|
+      hash.select do |key, value|
+        @test_data_keys.include? key
+      end
+    end
+
+    return result
+  end
+
+  def test_should_get_users
+    get :index
     assert_response :success
+    result = format_response(@response.parsed_body["data"])
+    assert_equal(result, @test_data_array)
   end
 
-  test "should get user by name" do
-    ApplicationController.any_instance.stubs(:isAdmin).returns(true)
-    get '/users/test1'
+  def test_should_get_user_by_username
+    get :show, params: { username: @test_data_array[0]["name"] }
     assert_response :success
+    result = format_response([@response.parsed_body["data"]])
+    assert_equal(result[0], @test_data_array[0])
   end
 
-  test "should create user if only the user is admin" do
+  def test_should_create_user_if_only_the_user_is_admin
     ApplicationController.any_instance.stubs(:isAdmin).returns(true)
-    post '/users', params: {
-      id: 9, name: :user1, username: :user1, password: 654321
+    input_data = {
+      "id" => 9, "name" => "user1", "username" => "user1", "password" => 654321, "admin" => false 
+    }
+    post :create, params: input_data
+    assert_response :success
+    result = format_response([User.find(9).serializable_hash])
+    result[0].delete('password_digest')
+    input_data.delete('password')
+    assert_equal(result[0], input_data)
+  end
+
+  def test_should_update_user_if_only_the_user_is_admin
+    ApplicationController.any_instance.stubs(:isAdmin).returns(true)
+    put :update, params: {
+      "username" => "test1", "name" => "test"
     }
     assert_response :success
+    result = format_response([User.find(1).serializable_hash])
+    assert_equal("test", result[0]["name"])
   end
 
-  test "should update user if only the user is admin" do
+  def test_should_destroy_user_if_only_the_user_is_admin
     ApplicationController.any_instance.stubs(:isAdmin).returns(true)
-    put '/users/test1', params: {
-      name: :user1
-    }
+    delete :destroy, params: { "username" => "test1" }
     assert_response :success
-  end
-
-  test "should destroy user if only the user is admin" do
-    ApplicationController.any_instance.stubs(:isAdmin).returns(true)
-    delete '/users/test1'
-    assert_response :success
-  end
-
-  test "should not create user if the user is not admin" do
-    post '/users', params: {
-      id: 9, name: :user1, username: :user1, password: 654321
-    }
-    
-    @response.server_error?
-    assert_equal(@response.parsed_body, {"message"=>"permission denied"})
-  end
-
-  test "should not update user if the user is not admin" do
-    put '/users/test1', params: {
-      name: :user1
-    }
-    @response.server_error?
-    assert_equal(@response.parsed_body, {"message"=>"permission denied"})
-  end
-
-  test "should not destroy user if the user is not admin" do
-    delete '/users/test1'
-    @response.server_error?
-    assert_equal(@response.parsed_body, {"message"=>"permission denied"})
+    result = User.all.map { |app| app[:id] }
+    assert_not result.include? 1
   end
 end

@@ -20,6 +20,7 @@ class BooksValidator
         @count = params[:count]
         @author = params[:author]
         @published = params[:published]
+        @journal = params[:journal]
         @action = params[:action]
         @create_action = @action == 'create'
         @update_action = @action == 'update'

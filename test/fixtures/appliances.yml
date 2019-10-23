@@ -2,16 +2,16 @@
 
 one:
   id: 1
-  name: MyString
-  price: MyString
+  name: MyString1
+  price: 10
   count: 1
   model: MyString
   brand: MyString
 
 two:
   id: 2
-  name: MyString
-  price: MyString
+  name: MyString2
+  price: 12
   count: 1
   model: MyString
   brand: MyString

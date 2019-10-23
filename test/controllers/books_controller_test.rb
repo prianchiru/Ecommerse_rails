@@ -1,155 +1,193 @@
 require 'test_helper'
 
-class BooksControllerTest < ActionDispatch::IntegrationTest
+class BooksControllerTest < ActionController::TestCase
   # test "the truth" do
   #   assert false
   # end
-  setup do
+  def setup
     BooksController.any_instance.stubs(:authorize_request).returns(true)
+    @test_data = YAML.load(File.read('test/fixtures/books.yml'))
+    @test_data_array = @test_data.values
+    @test_data_keys = @test_data_array[0].keys
   end
 
-  test "should get books" do
-    # BooksController.stub_any_instance(:authorize_request, true) do
-    #   get '/books'
-    #   assert_response :success
-    # end
-    get '/books'
+  def format_response(response)
+    result = response.map do |hash|
+      hash.select do |key, value|
+        @test_data_keys.include? key
+      end
+    end
+
+    return result
+  end
+
+  def test_should_get_books
+    get :index
     assert_response :success
+    result = format_response(@response.parsed_body["data"])
+    assert_equal(result, @test_data_array)
   end
 
-  test "should get book by name" do
-    get '/books/MyString'
+  def test_should_get_book_by_name
+    get :show, params: { id: @test_data_array[0]["name"] }
     assert_response :success
+    result = format_response([@response.parsed_body["data"]])
+    assert_equal(result[0], @test_data_array[0])
   end
 
-  test "should get book by id" do
-    get '/books/1'
+  def test_should_get_book_by_id
+    get :show, params: { id: @test_data_array[0]["id"] }
     assert_response :success
+    result = format_response([@response.parsed_body["data"]])
+    assert_equal(result[0], @test_data_array[0])
   end
 
-  test "should create book if only the user is admin" do
+  def test_should_create_book_if_only_the_user_is_admin
     ApplicationController.any_instance.stubs(:isAdmin).returns(true)
-    post '/books', params: {
-      id: 3, name: :book1, price: 12, count: 10, author: :someone, published: 1999, admin: false
+    input_data = {
+      "id" => 3, "name" => "book1", "price" => 12.0, "count" => 10, "author" => "someone", "published" => 1999
+    }
+    post :create, params: input_data
+    assert_response :success
+    result = format_response([Book.find(3).serializable_hash])
+    assert_equal(result[0], input_data)
+  end
+
+  def test_should_update_book_if_only_the_user_is_admin
+    ApplicationController.any_instance.stubs(:isAdmin).returns(true)
+    put :update, params: {
+      "id" => "MyString1", "name" => "test"
     }
     assert_response :success
+    result = format_response([Book.find(1).serializable_hash])
+    assert_equal("test", result[0]["name"])
   end
 
-  test "should update book if only the user is admin" do
+  def test_should_destroy_book_if_only_the_user_is_admin
     ApplicationController.any_instance.stubs(:isAdmin).returns(true)
-    put '/books/1', params: {
-      name: :test
-    }
+    delete :destroy, params: { "id" => 1 }
     assert_response :success
+    result = Book.all.map { |app| app[:id] }
+    assert_not result.include? 1
   end
 
-  test "should destroy book if only the user is admin" do
+  def test_should_add_book_if_only_the_user_is_admin
     ApplicationController.any_instance.stubs(:isAdmin).returns(true)
-    delete '/books/1'
+    post :add, params: { product: 'MyString1', count: 2 }
     assert_response :success
+    result = format_response([Book.find(1).serializable_hash])
+    assert_equal(@test_data_array[0]["count"] + 2, result[0]["count"])
   end
 
-  test "should add book if only the user is admin" do
+  def test_should_buy_book
     ApplicationController.any_instance.stubs(:isAdmin).returns(true)
-    post '/books/add', params: { product: 'MyString', count: 2 }
+    post :buy, params: { product: 'MyString1', count: 1 }
     assert_response :success
+    result = format_response([Book.find(1).serializable_hash])
+    assert_equal(@test_data_array[0]["count"] - 1, result[0]["count"])
   end
 
-  test "should buy book" do
-    ApplicationController.any_instance.stubs(:isAdmin).returns(true)
-    post '/books/buy', params: { product: 'MyString', count: 2 }
-    assert_response :success
-  end
-
-  test "should not create book if the user is not admin" do
-    post '/books', params: {
-      id: 3, name: :book1, price: 12, count: 10, author: :someone, published: 1999, admin: false
+  def test_should_not_create_book_if_the_user_is_not_admin
+    post :create, params: {
+      id: 3, name: :book1, price: 12, count: 10, author: :someone, published: 1999
     }
     
-    @response.server_error?
+    assert @response.server_error?
     assert_equal(@response.parsed_body, {"message"=>"permission denied"})
   end
 
-  test "should not update book if the user is not admin" do
-    put '/books/1', params: {
-      name: :test
+  def test_should_not_update_book_if_the_user_is_not_admin
+    put :update, params: {
+      id: :test
     }
-    @response.server_error?
+    assert @response.server_error?
     assert_equal(@response.parsed_body, {"message"=>"permission denied"})
   end
 
-  test "should not destroy book if the user is not admin" do
-    delete '/books/1'
-    @response.server_error?
+  def test_should_not_destroy_book_if_the_user_is_not_admin
+    delete :destroy, params: { "id" => 1 }
+    assert @response.server_error?
     assert_equal(@response.parsed_body, {"message"=>"permission denied"})
   end
 
-  test "should not add book if the user is not admin" do
-    post '/books/add', params: { product: 'MyString', count: 2 }
-    @response.server_error?
+  def test_should_not_add_book_if_the_user_is_not_admin
+    post :add, params: { product: 'MyString', count: 2 }
+    assert @response.server_error?
     assert_equal(@response.parsed_body, {"message"=>"permission denied"})
   end
 
-  test "should not create book without name" do
+  def test_should_not_create_book_without_name
     ApplicationController.any_instance.stubs(:isAdmin).returns(true)
-    post '/books', params: {
+    post :create, params: {
       id: 3, price: 12, count: 10, author: :someone, published: 1999, admin: false
     }
-    @response.server_error?
+    assert @response.server_error?
     assert_equal(@response.parsed_body["errors"], {"name"=>["can't be blank"]})
   end
 
-  test "should not create book without price" do
+  def test_should_not_create_book_without_price
     ApplicationController.any_instance.stubs(:isAdmin).returns(true)
-    post '/books', params: {
+    post :create, params: {
       id: 3, name: :test, count: 10, author: :someone, published: 1999, admin: false
     }
-    @response.server_error?
+    assert @response.server_error?
     assert_equal(@response.parsed_body["errors"], {"price"=>["can't be blank"]})
   end
 
-  test "should not create book without count" do
+  def test_should_not_create_book_without_count
     ApplicationController.any_instance.stubs(:isAdmin).returns(true)
-    post '/books', params: {
+    post :create, params: {
       id: 3, name: :test, price: 12, author: :someone, published: 1999, admin: false
     }
-    @response.server_error?
+    assert @response.server_error?
     assert_equal(@response.parsed_body["errors"], {"count"=>["can't be blank"]})
   end
 
-  test "should not create book without author" do
+  def test_should_not_create_book_without_author
     ApplicationController.any_instance.stubs(:isAdmin).returns(true)
-    post '/books', params: {
+    post :create, params: {
       id: 3, name: :test, price: 12, count: 10, published: 1999, admin: false
     }
-    @response.server_error?
+    assert @response.server_error?
     assert_equal(@response.parsed_body["errors"], {"author"=>["can't be blank"]})
   end
 
-  test "should not create book if price is not number" do
+  def test_should_not_create_book_if_price_is_not_number
     ApplicationController.any_instance.stubs(:isAdmin).returns(true)
-    post '/books', params: {
+    post :create, params: {
       id: 3, name: :test, price: :non, count: 10, author: :someone, published: 1999, admin: false
     }
-    @response.server_error?
+    assert @response.server_error?
     assert_equal(@response.parsed_body["errors"], {"price"=>["is not a number"]})
   end
 
-  test "should not create book if count is not number" do
+  def test_should_not_create_book_if_count_is_not_number
     ApplicationController.any_instance.stubs(:isAdmin).returns(true)
-    post '/books', params: {
+    post :create, params: {
       id: 3, name: :test, price: 12, count: :non, author: :someone, published: 1999, admin: false
     }
-    @response.server_error?
+    assert @response.server_error?
     assert_equal(@response.parsed_body["errors"], {"count"=>["is not a number"]})
   end
 
-  test "should not create book if published is not number" do
+  def test_should_not_create_book_if_published_is_not_number
     ApplicationController.any_instance.stubs(:isAdmin).returns(true)
-    post '/books', params: {
+    post :create, params: {
       id: 3, name: :test, price: 12, count: 10, author: :someone, published: :non, admin: false
     }
-    @response.server_error?
+    assert @response.server_error?
     assert_equal(@response.parsed_body["errors"], {"published"=>["is not a number"]})
+  end
+
+  def test_should_not_create_book_if_name_and_journal_together_not_unique
+    ApplicationController.any_instance.stubs(:isAdmin).returns(true)
+    post :create, params: {
+      id: 3, name: :test, journal: :studies, price: 12, count: 10, author: :someone, published: 1999, admin: false
+    }
+    post :create, params: {
+      id: 3, name: :test, journal: :studies, price: 12, count: 10, author: :someone, published: 1999, admin: false
+    }
+    assert @response.server_error?
+    assert_equal(@response.parsed_body["errors"], {"name"=>["has already been taken"]})
   end
 end

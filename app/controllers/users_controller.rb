@@ -1,19 +1,19 @@
 class UsersController < ApplicationController
     before_action :authorize_request
-    before_action :set_user, except: %i[create, index]
+    before_action :set_user, except: [:create, :index]
     before_action :isAdmin
 
     # /users
     # get
     def index
         @users = User.all
-        render json: @users
+        render json: { data: @users }
     end
 
     # /users/:username
     # get
     def show
-        render json: @user
+        render json: { data: @user }
     end
 
     # /users

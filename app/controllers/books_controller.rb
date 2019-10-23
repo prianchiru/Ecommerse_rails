@@ -83,11 +83,11 @@ class BooksController < ApplicationController
     end
 
     def get_params
-        params.permit(:id, :name, :price, :count, :author, :published)
+        params.permit(:name, :price, :count, :author, :published, :journal)
     end
 
     def get_params_update
-        params.permit(:id, :name, :price, :count, :author, :published)
+        params.permit(:name, :price, :count, :author, :published, :journal)
     end
 
     def validate_params

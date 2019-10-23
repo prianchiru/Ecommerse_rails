@@ -82,11 +82,11 @@ class AppliancesController < ApplicationController
     end
 
     def get_params
-        params.permit(:id, :name, :price, :count, :model, :brand)
+        params.permit(:name, :price, :count, :model, :brand)
     end
 
     def get_params_update
-        params.permit(:id, :name, :price, :count, :model, :brand)
+        params.permit(:name, :price, :count, :model, :brand)
     end
 
     def validate_params

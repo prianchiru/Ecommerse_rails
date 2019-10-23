@@ -2,7 +2,7 @@
 
 one:
   id: 1
-  name: MyString
+  name: MyString1
   price: 1.5
   count: 1
   author: MyString
@@ -10,7 +10,7 @@ one:
 
 two:
   id: 2
-  name: MyString
+  name: MyString2
   price: 1.5
   count: 1
   author: MyString

@@ -8,30 +8,35 @@ one:
   id: 1
   name: test1
   username: test1
-  password_digest: 654321
+  password_digest: "654321"
+  admin: false
 two:
   id: 2
   name: test2
   username: test2
-  password_digest: 654321
+  password_digest: "654321"
+  admin: false
 three:
   id: 3
   name: test3
   username: test3
-  password_digest: 654321
+  password_digest: "654321"
+  admin: false
 four:
   id: 4
   name: test4
   username: test4
-  password_digest: 654321
+  password_digest: "654321"
+  admin: false
 five:
   id: 5
   name: test5
   username: test5
-  password_digest: 654321
+  password_digest: "654321"
+  admin: false
 six:
   id: 6
   name: admin
   username: admin
-  password_digest: 654321
+  password_digest: "654320"
   admin: true
