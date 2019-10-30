@@ -92,7 +92,7 @@ class BooksControllerTest < ActionController::TestCase
       id: 3, name: :book1, price: 12, count: 10, author: :someone, published: 1999
     }
     
-    assert @response.server_error?
+    assert_response 401
     assert_equal(@response.parsed_body, {"message"=>"permission denied"})
   end
 
@@ -100,19 +100,19 @@ class BooksControllerTest < ActionController::TestCase
     put :update, params: {
       id: :test
     }
-    assert @response.server_error?
+    assert_response 401
     assert_equal(@response.parsed_body, {"message"=>"permission denied"})
   end
 
   def test_should_not_destroy_book_if_the_user_is_not_admin
     delete :destroy, params: { "id" => 1 }
-    assert @response.server_error?
+    assert_response 401
     assert_equal(@response.parsed_body, {"message"=>"permission denied"})
   end
 
   def test_should_not_add_book_if_the_user_is_not_admin
     post :add, params: { product: 'MyString', count: 2 }
-    assert @response.server_error?
+    assert_response 401
     assert_equal(@response.parsed_body, {"message"=>"permission denied"})
   end
 
@@ -121,7 +121,7 @@ class BooksControllerTest < ActionController::TestCase
     post :create, params: {
       id: 3, price: 12, count: 10, author: :someone, published: 1999, admin: false
     }
-    assert @response.server_error?
+    assert_response 400
     assert_equal(@response.parsed_body["errors"], {"name"=>["can't be blank"]})
   end
 
@@ -130,7 +130,7 @@ class BooksControllerTest < ActionController::TestCase
     post :create, params: {
       id: 3, name: :test, count: 10, author: :someone, published: 1999, admin: false
     }
-    assert @response.server_error?
+    assert_response 400
     assert_equal(@response.parsed_body["errors"], {"price"=>["can't be blank"]})
   end
 
@@ -139,7 +139,7 @@ class BooksControllerTest < ActionController::TestCase
     post :create, params: {
       id: 3, name: :test, price: 12, author: :someone, published: 1999, admin: false
     }
-    assert @response.server_error?
+    assert_response 400
     assert_equal(@response.parsed_body["errors"], {"count"=>["can't be blank"]})
   end
 
@@ -148,7 +148,7 @@ class BooksControllerTest < ActionController::TestCase
     post :create, params: {
       id: 3, name: :test, price: 12, count: 10, published: 1999, admin: false
     }
-    assert @response.server_error?
+    assert_response 400
     assert_equal(@response.parsed_body["errors"], {"author"=>["can't be blank"]})
   end
 
@@ -157,7 +157,7 @@ class BooksControllerTest < ActionController::TestCase
     post :create, params: {
       id: 3, name: :test, price: :non, count: 10, author: :someone, published: 1999, admin: false
     }
-    assert @response.server_error?
+    assert_response 400
     assert_equal(@response.parsed_body["errors"], {"price"=>["is not a number"]})
   end
 
@@ -166,7 +166,7 @@ class BooksControllerTest < ActionController::TestCase
     post :create, params: {
       id: 3, name: :test, price: 12, count: :non, author: :someone, published: 1999, admin: false
     }
-    assert @response.server_error?
+    assert_response 400
     assert_equal(@response.parsed_body["errors"], {"count"=>["is not a number"]})
   end
 
@@ -175,19 +175,31 @@ class BooksControllerTest < ActionController::TestCase
     post :create, params: {
       id: 3, name: :test, price: 12, count: 10, author: :someone, published: :non, admin: false
     }
-    assert @response.server_error?
+    assert_response 400
     assert_equal(@response.parsed_body["errors"], {"published"=>["is not a number"]})
   end
 
-  def test_should_not_create_book_if_name_and_journal_together_not_unique
+  def test_should_not_create_book_if_name_and_published_together_not_unique
     ApplicationController.any_instance.stubs(:isAdmin).returns(true)
     post :create, params: {
       id: 3, name: :test, journal: :studies, price: 12, count: 10, author: :someone, published: 1999, admin: false
     }
     post :create, params: {
+      id: 3, name: :test, journal: :studies1, price: 12, count: 10, author: :someone, published: 1999, admin: false
+    }
+    assert_response 400
+    assert_equal(@response.parsed_body["errors"], {"name"=>["has already been taken"]})
+  end
+
+  def test_should_create_book_if_name_and_published_together_is_unique
+    ApplicationController.any_instance.stubs(:isAdmin).returns(true)
+    post :create, params: {
       id: 3, name: :test, journal: :studies, price: 12, count: 10, author: :someone, published: 1999, admin: false
     }
-    assert @response.server_error?
-    assert_equal(@response.parsed_body["errors"], {"name"=>["has already been taken"]})
+    post :create, params: {
+      id: 3, name: :test, journal: :studies1, price: 12, count: 10, author: :someone, published: 2000, admin: false
+    }
+    assert_response 200
+    assert_nil @response.parsed_body["errors"]
   end
 end

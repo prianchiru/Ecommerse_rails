@@ -27,6 +27,8 @@ class AppliancesController < ApplicationController
         @appliance = Appliance.new(get_params)
         if @appliance.save
             render json: { message: "Appliance was successfully created" }
+        elsif @appliance.invalid?
+            render json: { message: "There is problem with appliance creation", errors: @appliance.errors }, status: 400
         else
             render json: { message: "There is problem with appliance creation", errors: @appliance.errors }, status: 500
         end
@@ -35,8 +37,10 @@ class AppliancesController < ApplicationController
     # /appliances/:id
     # post
     def update
-        if @appliance.update(get_params_update)
+        if @appliance.update(get_params)
             render json: { message: "Appliance was successfully updated" }
+        elsif @appliance.invalid?
+            render json: { message: "There is problem with appliance updation", errors: @appliance.errors }, status: 400
         else
             render json: { message: "There is problem with appliance updation", errors: @appliance.errors }, status: 500
         end
@@ -82,17 +86,13 @@ class AppliancesController < ApplicationController
     end
 
     def get_params
-        params.permit(:name, :price, :count, :model, :brand)
-    end
-
-    def get_params_update
-        params.permit(:name, :price, :count, :model, :brand)
+        params.permit(:name, :price, :count, :model, :brand, :warrenty_in_years)
     end
 
     def validate_params
         appliance = AppliancesValidator.new(params)
         if !appliance.valid?
-            render json: { errors: appliance.errors }, status: 500
+            render json: { errors: appliance.errors }, status: 400
         end
     end
 end

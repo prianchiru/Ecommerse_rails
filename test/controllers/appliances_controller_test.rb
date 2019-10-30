@@ -2,9 +2,7 @@ require 'test_helper'
 require 'yaml'
 
 class AppliancesControllerTest < ActionController::TestCase
-  # def the_truth
-  #   assert true
-  # end
+
   def setup
     AppliancesController.any_instance.stubs(:authorize_request).returns(true)
     @test_data = YAML.load(File.read('test/fixtures/appliances.yml'))
@@ -93,7 +91,7 @@ class AppliancesControllerTest < ActionController::TestCase
       id: 3, name: :appliance1, price: 12, count: 10, brand: :someone, model: :m1, admin: false
     }
     
-    assert @response.server_error?
+    assert_response 401
     assert_equal(@response.parsed_body, {"message"=>"permission denied"})
   end
 
@@ -101,19 +99,19 @@ class AppliancesControllerTest < ActionController::TestCase
     put :update, params: {
       id: :test
     }
-    assert @response.server_error?
+    assert_response 401
     assert_equal(@response.parsed_body, {"message"=>"permission denied"})
   end
 
   def test_should_not_destroy_appliance_if_the_user_is_not_admin
     delete :destroy, params: { "id" => 1 }
-    assert @response.server_error?
+    assert_response 401
     assert_equal(@response.parsed_body, {"message"=>"permission denied"})
   end
 
   def test_should_not_add_appliance_if_the_user_is_not_admin
     post :add, params: { product: 'MyString', count: 2 }
-    assert @response.server_error?
+    assert_response 401
     assert_equal(@response.parsed_body, {"message"=>"permission denied"})
   end
 
@@ -122,7 +120,7 @@ class AppliancesControllerTest < ActionController::TestCase
     post :create, params: {
       id: 3, price: 12, count: 10, brand: :someone, model: :m1, admin: false
     }
-    assert @response.server_error?
+    assert_response 400
     assert_equal(@response.parsed_body["errors"], {"name"=>["can't be blank"]})
   end
 
@@ -131,7 +129,7 @@ class AppliancesControllerTest < ActionController::TestCase
     post :create, params: {
       id: 3, name: :test, count: 10, brand: :someone, model: :m1, admin: false
     }
-    assert @response.server_error?
+    assert_response 400
     assert_equal(@response.parsed_body["errors"], {"price"=>["can't be blank"]})
   end
 
@@ -140,7 +138,7 @@ class AppliancesControllerTest < ActionController::TestCase
     post :create, params: {
       id: 3, name: :test, price: 12, brand: :someone, model: :m1, admin: false
     }
-    assert @response.server_error?
+    assert_response 400
     assert_equal(@response.parsed_body["errors"], {"count"=>["can't be blank"]})
   end
 
@@ -149,7 +147,7 @@ class AppliancesControllerTest < ActionController::TestCase
     post :create, params: {
       id: 3, name: :test, price: 12, count: 10, model: :m1, admin: false
     }
-    assert @response.server_error?
+    assert_response 400
     assert_equal(@response.parsed_body["errors"], {"brand"=>["can't be blank"]})
   end
 
@@ -158,7 +156,7 @@ class AppliancesControllerTest < ActionController::TestCase
     post :create, params: {
       id: 3, name: :test, price: :non, count: 10, brand: :someone, model: :m1, admin: false
     }
-    assert @response.server_error?
+    assert_response 400
     assert_equal(@response.parsed_body["errors"], {"price"=>["is not a number"]})
   end
 
@@ -167,7 +165,7 @@ class AppliancesControllerTest < ActionController::TestCase
     post :create, params: {
       id: 3, name: :test, price: 12, count: :non, brand: :someone, model: :m1, admin: false
     }
-    assert @response.server_error?
+    assert_response 400
     assert_equal(@response.parsed_body["errors"], {"count"=>["is not a number"]})
   end
 
@@ -179,7 +177,19 @@ class AppliancesControllerTest < ActionController::TestCase
     post :create, params: {
       id: 3, name: :test, warrenty_in_years: 5, price: 12, count: 5, brand: :someone, model: :m1, admin: false
     }
-    assert @response.server_error?
+    assert_response 400
     assert_equal(@response.parsed_body["errors"], {"name"=>["has already been taken"]})
+  end
+
+  def test_should_create_appliance_if_name_and_warrenty_in_years_together_is_unique
+    ApplicationController.any_instance.stubs(:isAdmin).returns(true)
+    post :create, params: {
+      id: 3, name: :test, warrenty_in_years: 5, price: 12, count: 5, brand: :someone, model: :m1, admin: false
+    }
+    post :create, params: {
+      id: 3, name: :test, warrenty_in_years: 3, price: 12, count: 5, brand: :someone, model: :m1, admin: false
+    }
+    assert_response 200
+    assert_nil @response.parsed_body["errors"]
   end
 end

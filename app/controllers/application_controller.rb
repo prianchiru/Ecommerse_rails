@@ -21,7 +21,7 @@ class ApplicationController < ActionController::API
     end
 
     def isAdmin
-        render json: { message: 'permission denied' }, status: 500 if !@current_user || !@current_user.admin     
+        render json: { message: 'permission denied' }, status: 401 if !@current_user || !@current_user.admin     
     end
 
     def logged_in_user

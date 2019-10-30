@@ -3,11 +3,6 @@ class BooksController < ApplicationController
     before_action :set_book, only: [:show, :update, :destroy]
     before_action :isAdmin, only: [:create, :update, :destroy, :add]
     before_action :validate_params, only: [:create, :update]
-    # before_action :validate_params_update, only: :update
-    # validates :name, presence: true
-    # validates :price, numericality: true
-    # validates :count, numericality: { integer_only: true }
-    
 
     BOOKS_CATEGORY = 'books'
     # /books
@@ -29,6 +24,8 @@ class BooksController < ApplicationController
         @book = Book.new(get_params)
         if @book.save
             render json: { message: "Book was successfully created" }
+        elsif @book.invalid?
+            render json: { message: "There is problem with book creation", errors: @book.errors }, status: 400
         else
             render json: { message: "There is problem with book creation", errors: @book.errors }, status: 500
         end
@@ -59,6 +56,8 @@ class BooksController < ApplicationController
     def update
         if @book.update(get_params_update)
             render json: { message: "Book was successfully updated" }, status: 200
+        elsif @book.invalid?
+            render json: { message: "There is problem with book updation", errors: @book.errors }, status: 400 
         else
             render json: { error: "There is problem with book updation" }, status: 500
         end
@@ -93,7 +92,7 @@ class BooksController < ApplicationController
     def validate_params
         book = BooksValidator.new(params)
         if !book.valid?
-            render json: { errors: book.errors }, status: 500
+            render json: { errors: book.errors }, status: 400
         end
     end
 end

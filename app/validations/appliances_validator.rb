@@ -10,8 +10,9 @@ class AppliancesValidator
 
     validates :price, numericality: true, if: -> { @price }
     validates :count, numericality: true, if: -> { @count }
+    validates :warrenty_in_years, numericality: true, if: -> { @warrenty_in_years }
 
-    attr_accessor :name, :price, :count, :brand, :model
+    attr_accessor :name, :price, :count, :brand, :model, :warrenty_in_years
 
     def initialize(params={})
         @name = params[:name]
@@ -19,6 +20,7 @@ class AppliancesValidator
         @count = params[:count]
         @model = params[:model]
         @brand = params[:brand]
+        @warrenty_in_years = params[:warrenty_in_years]
         @action = params[:action]
         @create_action = @action == 'create'
         @update_action = @action == 'update'
