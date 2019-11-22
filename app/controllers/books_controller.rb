@@ -1,7 +1,7 @@
 class BooksController < ApplicationController
-    before_action :authorize_request
+    # before_action :authorize_request
     before_action :set_book, only: [:show, :update, :destroy]
-    before_action :isAdmin, only: [:create, :update, :destroy, :add]
+    # before_action :isAdmin, only: [:create, :update, :destroy, :add]
     before_action :validate_params, only: [:create, :update]
 
     BOOKS_CATEGORY = 'books'
@@ -9,7 +9,7 @@ class BooksController < ApplicationController
     # get
     def index
         @books = Book.all
-        render json: { data: @books }
+        render json: { book: @books }
     end
 
     # /books/:id

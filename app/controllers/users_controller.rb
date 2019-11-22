@@ -1,7 +1,7 @@
 class UsersController < ApplicationController
-    before_action :authorize_request
+    before_action :authorize_request, except: [:create]
     before_action :set_user, except: [:create, :index]
-    before_action :isAdmin
+    before_action :isAdmin, except: [:create]
 
     # /users
     # get

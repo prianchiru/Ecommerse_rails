@@ -1,5 +1,16 @@
 class ApplicationController < ActionController::API
     include ActionController::MimeResponds
+
+    before_action :testing
+    before_action :add_headers
+    
+    def testing
+        puts "parent testing"
+    end
+
+    def add_headers
+        response.set_header('Access-Control-Allow-Origin', '*')
+    end
     
     def not_found
         render json: { error: 'not found' }

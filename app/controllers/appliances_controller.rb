@@ -12,6 +12,10 @@ class AppliancesController < ApplicationController
         render json: { data: @appliances }
     end
 
+    def testing
+        puts "child testing"
+    end
+
     # /appliances/:id
     # get
     def show
